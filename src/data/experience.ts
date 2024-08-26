@@ -73,7 +73,7 @@ export const EXPERIENCE: ExperienceProp[] = [
     dates: "Project",
     title: "Pc Store E-Commerce",
     company: "",
-    companyUrl: "https://pcstoreecommerce.netlify.app/assets/PcStoreLogo-74c7c985.svg",
+    companyUrl: "https://pcstoreecommerce.netlify.app/",
     githubUrl: "https://github.com/SrOscuroBlck/E-CommerceGustavoCamargo",
     description:
       "Developed an e-commerce website for a fictional computer store. The website allows users to view products, add them to a cart, and checkout. The website was built using React JS and styled with Material-UI.",
