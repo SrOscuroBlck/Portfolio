@@ -1,84 +1,99 @@
-<script lang="ts">
+<script>
   import * as THREE from "three";
   import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-  let scene: THREE.Scene;
-  let camera: THREE.PerspectiveCamera;
-  let renderer: THREE.WebGLRenderer;
-  let controls: OrbitControls;
+  // @ts-ignore
+  let scene, camera, renderer, controls;
   let globeRadius = 20;
-  let dots: THREE.Mesh[] = [];
+  let dots = [];
 
   const init = () => {
-    const container = document.querySelector(".globe-container") as HTMLElement;
-    const canvas = document.querySelector(".globe-canvas") as HTMLCanvasElement;
+    const container = document.querySelector(".globe-container");
+    const canvas = document.querySelector(".globe-canvas");
+
+    if (!container || !canvas) {
+      console.error("Container or canvas element not found");
+      return;
+    }
 
     const sizes = {
+      // @ts-ignore
       width: container.offsetWidth,
+      // @ts-ignore
       height: container.offsetHeight,
     };
 
+    // @ts-ignore
     scene = new THREE.Scene();
 
+    // Camera with adjusted near/far clipping planes
+    // @ts-ignore
     camera = new THREE.PerspectiveCamera(
       30,
       sizes.width / sizes.height,
-      0.1,
-      1000
+      0.1,  // Near plane to avoid clipping too close
+      1000  // Far plane for distant objects
     );
     camera.position.z = 100;
 
+    // @ts-ignore
     renderer = new THREE.WebGLRenderer({
       canvas: canvas,
       alpha: true,
       antialias: true,
     });
     renderer.setSize(sizes.width, sizes.height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+    // Point Light
     const pointLight = new THREE.PointLight(0xffffff, 1.5, 200);
     pointLight.position.set(-50, 0, 60);
     scene.add(pointLight);
 
+    // Hemisphere Light
     const hemisphereLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.6);
     scene.add(hemisphereLight);
 
+    // @ts-ignore
     controls = new OrbitControls(camera, renderer.domElement);
     controls.autoRotate = true;
     controls.autoRotateSpeed = 1.2;
     controls.enableDamping = true;
-    controls.dampingFactor = 0.1;
     controls.enablePan = false;
     controls.enableZoom = false;
 
-    controls.minPolarAngle = Math.PI / 2;
-    controls.maxPolarAngle = Math.PI / 2;
+    // Restrict the rotation to horizontal (lock vertical movement)
+    controls.minPolarAngle = Math.PI / 2; // 90 degrees, no vertical movement
+    controls.maxPolarAngle = Math.PI / 2; // 90 degrees, no vertical movement
 
     loadDotsTexture("/world_alpha_mini.jpg");
     animate();
   };
 
-  const loadDotsTexture = (imageSrc: string) => {
+  // @ts-ignore
+  const loadDotsTexture = (imageSrc) => {
     const image = new Image();
     image.onload = () => {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
+      canvas.width = image.width;
+      canvas.height = image.height;
       if (ctx) {
-        canvas.width = image.width;
-        canvas.height = image.height;
         ctx.drawImage(image, 0, 0);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         generateDotsFromTexture(imageData);
+      } else {
+        console.error("Canvas context not available");
       }
     };
     image.src = imageSrc;
   };
 
-  const generateDotsFromTexture = (imageData: ImageData) => {
+  // @ts-ignore
+  const generateDotsFromTexture = (imageData) => {
     const width = imageData.width;
     const height = imageData.height;
     const data = imageData.data;
-    const dotGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+    const dotGeometry = new THREE.SphereGeometry(0.15, 8, 8); // Use SphereGeometry
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -87,16 +102,18 @@
         const g = data[i + 1];
         const b = data[i + 2];
 
+        // Only render dots where it's dark enough (based on pixel brightness)
         if (r < 80 && g < 80 && b < 80) {
-          const lat = (1 - y / height) * Math.PI - Math.PI / 2;
-          const lon = (x / width) * 2 * Math.PI - Math.PI;
+          const lat = (1 - y / height) * Math.PI - Math.PI / 2; // Invert the latitude
+          const lon = (x / width) * 2 * Math.PI - Math.PI; // Longitude
 
+          // Convert lat/lon to 3D coordinates
           const xPos = globeRadius * Math.cos(lat) * Math.cos(lon);
           const yPos = globeRadius * Math.sin(lat);
           const zPos = globeRadius * Math.cos(lat) * Math.sin(lon);
 
           const dotMaterial = new THREE.MeshBasicMaterial({
-            color: 0xdedede,
+            color: 0xffffff,
             transparent: true,
             opacity: 1.0,
             depthTest: true,
@@ -105,33 +122,26 @@
 
           const dot = new THREE.Mesh(dotGeometry, dotMaterial);
           dot.position.set(xPos, yPos, zPos);
+          // @ts-ignore
           scene.add(dot);
-          dots.push(dot);
+          dots.push(dot);  // Store the dots so we can toggle their visibility
         }
       }
     }
   };
-
-  const toggleVisibilityOfBackDots = () => {
-    dots.forEach((dot) => {
-      const dotWorldPosition = new THREE.Vector3();
-      dot.getWorldPosition(dotWorldPosition);
-      const direction = dotWorldPosition.clone().sub(camera.position).normalize();
-      const dotDirection = dot.position.clone().normalize();
-
-      const dotFacingFactor = dotDirection.dot(direction);
-
-      const newOpacity = THREE.MathUtils.lerp(0.2, 1.0, (dotFacingFactor + 1) / 2);
-      dot.material.opacity = newOpacity;
-    });
-  };
-
+  
   const animate = () => {
+    // @ts-ignore
     controls.update();
-    toggleVisibilityOfBackDots();
+    // @ts-ignore
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
   };
 
   window.onload = init;
 </script>
+
+
+<div class="globe-container" style="width: 100%; height: 350px; position: relative;">
+  <canvas class="globe-canvas" style="width: 100%; height: 100%;"></canvas>
+</div>
