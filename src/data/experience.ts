@@ -66,7 +66,7 @@ export const EXPERIENCE: ExperienceProp[] = [
       "AWS",
       "Azure"
     ],
-    logo: "https://media.licdn.com/dms/image/v2/D4E0BAQEcohTSGrDOcg/company-logo_200_200/company-logo_200_200/0/1697696720463/intellsis_tech_logo?e=1732752000&v=beta&t=vQ_uCfVLipeeQ0uNSqPR4_Q7geZefzNv59EyR6K5_Os",
+    logo: "https://media.licdn.com/dms/image/v2/D4E0BAQEcohTSGrDOcg/company-logo_200_200/company-logo_200_200/0/1697696720463/intellsis_tech_logo?e=1746057600&v=beta&t=ZBZkj2wyRqo11lvjQ3ntHzqwANcjZDleQ1m216OkaPE",
   },
   {
     dates: "Founder",
