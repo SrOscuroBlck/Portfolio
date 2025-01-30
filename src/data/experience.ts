@@ -72,8 +72,7 @@ export const EXPERIENCE: ExperienceProp[] = [
     dates: "Founder",
     title: "TasteBud",
     company: "Startup Project",
-    companyUrl: "https://tastebud.app",
-    githubUrl: "https://github.com/tastebud",
+    companyUrl: "https://www.linkedin.com/company/tastebud-co/",
     description:
       "Developing an AI-driven restaurant recommendation platform that suggests dishes based on user taste history and menu analysis. Self-funded and in development.",
     technologies: [
