@@ -22,7 +22,7 @@ export const EXPERIENCE: ExperienceProp[] = [
     dates: "Oct 2024 — Present",
     title: "Software Engineer (Freelance)",
     company: "Priver Group (Remote)",
-    companyUrl: "https://privergroup.com",
+    companyUrl: "https://lab.priver.app/",
     description:
       "Working on multiple projects, including HouseApp (Flutter-based real estate discovery platform), DigiMed (medical center portal with GraphQL backend), and a product distribution app integrating SupaBase.",
     technologies: [
@@ -38,7 +38,7 @@ export const EXPERIENCE: ExperienceProp[] = [
     dates: "Aug 2024 — Present",
     title: "Tech Lead",
     company: "BAST Automation (Remote)",
-    companyUrl: "https://bastcolombia.com",
+    companyUrl: "https://www.linkedin.com/company/bast-colombia/",
     description:
       "Leading the development of BIA (BAST Intelligent Assistant), a chatbot for IPS appointment automation, reducing call center workload by 60%. Managing a team of three, defining system architecture, and ensuring product-market fit.",
     technologies: [
@@ -53,7 +53,7 @@ export const EXPERIENCE: ExperienceProp[] = [
     dates: "October 2023 — September 2024",
     title: "Junior Software Engineer",
     company: "Intellsis (Remote)",
-    companyUrl: "https://www.linkedin.com/company/intellsis-tech/mycompany/",
+    companyUrl: "https://www.linkedin.com/company/intellsis-tech/",
     description:
       "Led the development and implementation of advanced point cloud data processing techniques as the leader of four backend development cells. Specialized in optimizing Potree solutions for large-scale data visualization. Actively oversaw backend performance and ensured alignment with company goals. Collaborated with cross-functional teams to integrate backend solutions seamlessly into larger project frameworks, while mentoring team members to maintain excellence in software development.",
     technologies: [
