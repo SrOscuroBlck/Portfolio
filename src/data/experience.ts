@@ -16,7 +16,7 @@ export const EXPERIENCE: ExperienceProp[] = [
       "Python",
       "CI/CD",
     ],
-    logo: "https://cdn.prod.website-files.com/65243a9f0e974d0965f5e977/656c6f400e633340930143e1_Bookhub%20(5).png",
+    logo: "https://media.licdn.com/dms/image/v2/D4E0BAQFWFDXBA8K6HA/company-logo_200_200/company-logo_200_200/0/1723496441868/bookhub_by_muthu_gmbh_logo?e=1746057600&v=beta&t=swm9sAjTgKe8auMdwoaZQ_9h0v8QaVDXzBrKpU9JRPA",
   },
   {
     dates: "Oct 2024 — Present",
