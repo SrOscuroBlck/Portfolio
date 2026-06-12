@@ -2,7 +2,15 @@
 export default {
   content: ["./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}"],
   theme: {
-    extend: {},
+    extend: {
+      transitionTimingFunction: {
+        "out-soft": "cubic-bezier(0.16, 1, 0.3, 1)",
+      },
+      transitionDuration: {
+        250: "250ms",
+        400: "400ms",
+      },
+    },
   },
   plugins: [],
 };

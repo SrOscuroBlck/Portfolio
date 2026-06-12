@@ -6,7 +6,7 @@ import propNames from "../propNames";
 const contextMode = (
   cursor: HTMLElement,
   props: CProps,
-  interactElements: NodeListOf<Element>
+  interactElements: NodeListOf<Element>,
 ) => {
   const parallaxSpeed = {
     cursor: props.parallaxIndex,
@@ -25,7 +25,7 @@ const contextMode = (
       // If eleemnt is hovered
     } else {
       const borderRadius = Number(
-        window.getComputedStyle(cursorTarget).borderRadius.slice(0, -2) as any
+        window.getComputedStyle(cursorTarget).borderRadius.slice(0, -2) as any,
       );
       // For "LIFT" mode
       if (isElHasProperty(cursorTarget, propNames.lift)) {
@@ -34,13 +34,13 @@ const contextMode = (
             e.clientX,
             cursorTarget.getBoundingClientRect().left,
             cursorTarget.clientWidth,
-            parallaxSpeed.target
+            parallaxSpeed.target,
           ),
           y: getMoveIndex(
             e.clientY,
             cursorTarget.getBoundingClientRect().top,
             cursorTarget.clientHeight,
-            parallaxSpeed.target
+            parallaxSpeed.target,
           ),
           scale: 1.1,
           boxShadow: getStyleProp("--ghost-shadow"),
@@ -111,13 +111,13 @@ const contextMode = (
               e.clientX,
               cursorTarget.getBoundingClientRect().left,
               cursorTarget.clientWidth,
-              parallaxSpeed.target
+              parallaxSpeed.target,
             ),
             y: -getMoveIndex(
               e.clientY,
               cursorTarget.getBoundingClientRect().top,
               cursorTarget.clientHeight,
-              parallaxSpeed.target
+              parallaxSpeed.target,
             ),
           });
         }
@@ -129,7 +129,7 @@ const contextMode = (
     isHovered = true;
     cursorTarget = e.target as HTMLElement;
     const borderRadius = Number(
-      window.getComputedStyle(cursorTarget).borderRadius.slice(0, -2) as any
+      window.getComputedStyle(cursorTarget).borderRadius.slice(0, -2) as any,
     );
 
     if (isElHasProperty(cursorTarget, propNames.lift)) {

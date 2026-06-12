@@ -1,147 +1,661 @@
+---
+import { LOCATIONS } from "../../data/locations";
+---
+
 <script>
   import * as THREE from "three";
   import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+  import { LOCATIONS } from "../../data/locations";
+  import type { MapLocation } from "../../data/locations";
 
-  // @ts-ignore
-  let scene, camera, renderer, controls;
-  let globeRadius = 20;
-  let dots = [];
+  const GLOBE_RADIUS = 20;
+  const CAMERA_DISTANCE = 100;
+  const DOT_RADIUS = 0.15;
+  const MARKER_RADIUS = 0.55;
+  const HIT_RADIUS = 2;
+  const FOCUS_DURATION = 900;
+  const ARC_DRAW_DURATION = 700;
+  const HOME_ID = "cali";
+  // Vertical world units the orthographic camera shows (globe diameter is 40)
+  const VIEW_HEIGHT = 50;
+  // Resting camera tilt (~25° north) so high-latitude cities aren't squeezed
+  // against the globe's edge; focusing a city tilts further to face it.
+  const DEFAULT_POLAR = THREE.MathUtils.degToRad(65);
+  const MIN_POLAR = THREE.MathUtils.degToRad(30);
+  const MAX_POLAR = THREE.MathUtils.degToRad(120);
 
-  const init = () => {
-    const container = document.querySelector(".globe-container");
-    const canvas = document.querySelector(".globe-canvas");
+  const MARKER_COLOR = 0x4ade80; // tailwind green-400, same accent as the "available" dot
+  const MARKER_COLOR_SELECTED = 0x86efac; // green-300
+  const ARC_OPACITY_IDLE = 0.18;
+  const ARC_OPACITY_ACTIVE = 0.65;
+  const ARC_OPACITY_DIMMED = 0.05;
 
-    if (!container || !canvas) {
-      console.error("Container or canvas element not found");
-      return;
-    }
+  interface Marker {
+    location: MapLocation;
+    mesh: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
+    hit: THREE.Mesh;
+    index: number;
+  }
 
-    const sizes = {
-      // @ts-ignore
-      width: container.offsetWidth,
-      // @ts-ignore
-      height: container.offsetHeight,
-    };
+  interface Arc {
+    locationId: string;
+    line: THREE.Line;
+    material: THREE.LineBasicMaterial;
+    pointCount: number;
+    animating: boolean;
+    drawStart: number | null;
+  }
 
-    // @ts-ignore
-    scene = new THREE.Scene();
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-    // Camera with adjusted near/far clipping planes
-    // @ts-ignore
-    camera = new THREE.PerspectiveCamera(
-      30,
-      sizes.width / sizes.height,
-      0.1,  // Near plane to avoid clipping too close
-      1000  // Far plane for distant objects
+  let containerEl: HTMLElement | null = null;
+  let canvasEl: HTMLCanvasElement | null = null;
+  let cardEl: HTMLElement | null = null;
+  let cardCityEl: HTMLElement | null = null;
+  let cardCountryEl: HTMLElement | null = null;
+  let cardStoryEl: HTMLElement | null = null;
+  let tooltipEl: HTMLElement | null = null;
+  let chipEls: HTMLButtonElement[] = [];
+
+  let scene: THREE.Scene | null = null;
+  let camera: THREE.OrthographicCamera | null = null;
+  let renderer: THREE.WebGLRenderer | null = null;
+  let controls: OrbitControls | null = null;
+  let occluder: THREE.Mesh | null = null;
+  let rafId = 0;
+
+  let markers: Marker[] = [];
+  let arcs: Arc[] = [];
+  let selected: Marker | null = null;
+
+  // Camera focus tween over azimuth (theta) and tilt (phi)
+  let focusActive = false;
+  let focusStart: number | null = null;
+  let focusThetaFrom = 0;
+  let focusThetaDelta = 0;
+  let focusPhiFrom = 0;
+  let focusPhiTarget = DEFAULT_POLAR;
+  const cameraSpherical = new THREE.Spherical();
+
+  const raycaster = new THREE.Raycaster();
+  const pointerNdc = new THREE.Vector2();
+  let pointerDownX = 0;
+  let pointerDownY = 0;
+
+  // Equirectangular lat/lon → xyz. The -z keeps the front face un-mirrored:
+  // looking at the globe from outside, east must move to the right.
+  const latLonToVector3 = (latDeg: number, lonDeg: number, radius: number) => {
+    const lat = THREE.MathUtils.degToRad(latDeg);
+    const lon = THREE.MathUtils.degToRad(lonDeg);
+    return new THREE.Vector3(
+      radius * Math.cos(lat) * Math.cos(lon),
+      radius * Math.sin(lat),
+      -radius * Math.cos(lat) * Math.sin(lon),
     );
-    camera.position.z = 100;
-
-    // @ts-ignore
-    renderer = new THREE.WebGLRenderer({
-      canvas: canvas,
-      alpha: true,
-      antialias: true,
-    });
-    renderer.setSize(sizes.width, sizes.height);
-
-    // Point Light
-    const pointLight = new THREE.PointLight(0xffffff, 1.5, 200);
-    pointLight.position.set(-50, 0, 60);
-    scene.add(pointLight);
-
-    // Hemisphere Light
-    const hemisphereLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.6);
-    scene.add(hemisphereLight);
-
-    // @ts-ignore
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 1.2;
-    controls.enableDamping = true;
-    controls.enablePan = false;
-    controls.enableZoom = false;
-
-    // Restrict the rotation to horizontal (lock vertical movement)
-    controls.minPolarAngle = Math.PI / 2; // 90 degrees, no vertical movement
-    controls.maxPolarAngle = Math.PI / 2; // 90 degrees, no vertical movement
-
-    loadDotsTexture("/world_alpha_mini.jpg");
-    animate();
   };
 
-  // @ts-ignore
-  const loadDotsTexture = (imageSrc) => {
+  const loadDotsTexture = (imageSrc: string) => {
     const image = new Image();
     image.onload = () => {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      canvas.width = image.width;
-      canvas.height = image.height;
-      if (ctx) {
-        ctx.drawImage(image, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        generateDotsFromTexture(imageData);
-      } else {
-        console.error("Canvas context not available");
+      const sampleCanvas = document.createElement("canvas");
+      const ctx = sampleCanvas.getContext("2d");
+      if (!ctx) {
+        console.error("Canvas 2D context not available");
+        return;
       }
+      sampleCanvas.width = image.width;
+      sampleCanvas.height = image.height;
+      ctx.drawImage(image, 0, 0);
+      generateDotsFromTexture(
+        ctx.getImageData(0, 0, sampleCanvas.width, sampleCanvas.height),
+      );
     };
     image.src = imageSrc;
   };
 
-  // @ts-ignore
-  const generateDotsFromTexture = (imageData) => {
-    const width = imageData.width;
-    const height = imageData.height;
-    const data = imageData.data;
-    const dotGeometry = new THREE.SphereGeometry(0.15, 8, 8); // Use SphereGeometry
+  const generateDotsFromTexture = (imageData: ImageData) => {
+    if (!scene) return;
+    const { width, height, data } = imageData;
 
+    const positions: THREE.Vector3[] = [];
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const i = (y * width + x) * 4;
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-
-        // Only render dots where it's dark enough (based on pixel brightness)
-        if (r < 80 && g < 80 && b < 80) {
-          const lat = (1 - y / height) * Math.PI - Math.PI / 2; // Invert the latitude
-          const lon = (x / width) * 2 * Math.PI - Math.PI; // Longitude
-
-          // Convert lat/lon to 3D coordinates
-          const xPos = globeRadius * Math.cos(lat) * Math.cos(lon);
-          const yPos = globeRadius * Math.sin(lat);
-          const zPos = globeRadius * Math.cos(lat) * Math.sin(lon);
-
-          const dotMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 1.0,
-            depthTest: true,
-            depthWrite: true,
-          });
-
-          const dot = new THREE.Mesh(dotGeometry, dotMaterial);
-          dot.position.set(xPos, yPos, zPos);
-          // @ts-ignore
-          scene.add(dot);
-          dots.push(dot);  // Store the dots so we can toggle their visibility
+        // Only render dots where the map is dark enough (land pixels)
+        if (data[i] < 80 && data[i + 1] < 80 && data[i + 2] < 80) {
+          const latDeg = (1 - y / height) * 180 - 90;
+          const lonDeg = (x / width) * 360 - 180;
+          positions.push(latLonToVector3(latDeg, lonDeg, GLOBE_RADIUS));
         }
       }
     }
-  };
-  
-  const animate = () => {
-    // @ts-ignore
-    controls.update();
-    // @ts-ignore
-    renderer.render(scene, camera);
-    requestAnimationFrame(animate);
+
+    // One InstancedMesh for every land dot instead of thousands of individual meshes
+    const dotGeometry = new THREE.SphereGeometry(DOT_RADIUS, 6, 6);
+    const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const dots = new THREE.InstancedMesh(
+      dotGeometry,
+      dotMaterial,
+      positions.length,
+    );
+    const matrix = new THREE.Matrix4();
+    positions.forEach((position, i) => {
+      matrix.setPosition(position);
+      dots.setMatrixAt(i, matrix);
+    });
+    dots.instanceMatrix.needsUpdate = true;
+    scene.add(dots);
   };
 
-  window.onload = init;
+  const buildOccluder = () => {
+    if (!scene) return;
+    // Opaque black core so the far hemisphere never shows through the dots
+    occluder = new THREE.Mesh(
+      new THREE.SphereGeometry(GLOBE_RADIUS - 0.3, 48, 48),
+      new THREE.MeshBasicMaterial({ color: 0x000000 }),
+    );
+    scene.add(occluder);
+  };
+
+  const buildMarkers = () => {
+    if (!scene) return;
+    const markerGeometry = new THREE.SphereGeometry(MARKER_RADIUS, 16, 16);
+    const hitGeometry = new THREE.SphereGeometry(HIT_RADIUS, 8, 8);
+
+    markers = LOCATIONS.map((location, index) => {
+      const position = latLonToVector3(
+        location.lat,
+        location.lon,
+        GLOBE_RADIUS * 1.01,
+      );
+
+      const mesh = new THREE.Mesh(
+        markerGeometry,
+        new THREE.MeshBasicMaterial({ color: MARKER_COLOR }),
+      );
+      mesh.position.copy(position);
+
+      // Invisible, oversized raycast target so small markers are easy to hit
+      const hit = new THREE.Mesh(
+        hitGeometry,
+        new THREE.MeshBasicMaterial({
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+        }),
+      );
+      hit.position.copy(position);
+
+      scene?.add(mesh, hit);
+      return { location, mesh, hit, index };
+    });
+  };
+
+  const buildArcs = () => {
+    if (!scene) return;
+    const home = LOCATIONS.find((location) => location.id === HOME_ID);
+    if (!home) return;
+    const start = latLonToVector3(home.lat, home.lon, GLOBE_RADIUS * 1.01);
+
+    arcs = LOCATIONS.filter((location) => location.id !== HOME_ID).map(
+      (location) => {
+        const end = latLonToVector3(
+          location.lat,
+          location.lon,
+          GLOBE_RADIUS * 1.01,
+        );
+        // Lift the midpoint proportionally to how far apart the cities are
+        const spread = start.angleTo(end) / Math.PI;
+        const control = start
+          .clone()
+          .add(end)
+          .multiplyScalar(0.5)
+          .normalize()
+          .multiplyScalar(GLOBE_RADIUS * (1.12 + 0.4 * spread));
+        const curve = new THREE.QuadraticBezierCurve3(start, control, end);
+        const points = curve.getPoints(64);
+
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const material = new THREE.LineBasicMaterial({
+          color: MARKER_COLOR,
+          transparent: true,
+          opacity: ARC_OPACITY_IDLE,
+        });
+        const line = new THREE.Line(geometry, material);
+        scene?.add(line);
+
+        return {
+          locationId: location.id,
+          line,
+          material,
+          pointCount: points.length,
+          animating: false,
+          drawStart: null,
+        };
+      },
+    );
+  };
+
+  const resetArcs = () => {
+    arcs.forEach((arc) => {
+      arc.material.opacity = ARC_OPACITY_IDLE;
+      arc.line.geometry.setDrawRange(0, Infinity);
+      arc.animating = false;
+      arc.drawStart = null;
+    });
+  };
+
+  const highlightArcs = (locationId: string) => {
+    const isHome = locationId === HOME_ID;
+    arcs.forEach((arc) => {
+      const active = isHome || arc.locationId === locationId;
+      arc.material.opacity = active ? ARC_OPACITY_ACTIVE : ARC_OPACITY_DIMMED;
+      if (active && !reducedMotion.matches) {
+        // Redraw the journey line from home to the selected city
+        arc.line.geometry.setDrawRange(0, 0);
+        arc.animating = true;
+        arc.drawStart = null;
+      } else {
+        arc.line.geometry.setDrawRange(0, Infinity);
+        arc.animating = false;
+        arc.drawStart = null;
+      }
+    });
+  };
+
+  const pickMarker = (event: PointerEvent): Marker | null => {
+    if (!canvasEl || !camera) return null;
+    const rect = canvasEl.getBoundingClientRect();
+    pointerNdc.set(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    raycaster.setFromCamera(pointerNdc, camera);
+    // Include the occluder so markers on the far side can't be picked
+    const targets: THREE.Object3D[] = markers.map((m) => m.hit);
+    if (occluder) targets.push(occluder);
+    const hits = raycaster.intersectObjects(targets, false);
+    if (hits.length === 0) return null;
+    return markers.find((m) => m.hit === hits[0].object) ?? null;
+  };
+
+  // Holds the camera tilt steady so OrbitControls (drag + autorotate) keeps it
+  const applyPolarLock = (phi: number) => {
+    if (!controls) return;
+    controls.minPolarAngle = phi;
+    controls.maxPolarAngle = phi;
+  };
+
+  const startFocusTween = (targetTheta: number, targetPhi: number) => {
+    if (!camera) return;
+    if (reducedMotion.matches) {
+      camera.position.setFromSphericalCoords(
+        CAMERA_DISTANCE,
+        targetPhi,
+        targetTheta,
+      );
+      camera.lookAt(0, 0, 0);
+      applyPolarLock(targetPhi);
+      return;
+    }
+    cameraSpherical.setFromVector3(camera.position);
+    focusThetaFrom = cameraSpherical.theta;
+    focusPhiFrom = cameraSpherical.phi;
+    const raw = targetTheta - focusThetaFrom;
+    // Shortest way around the globe
+    focusThetaDelta =
+      ((((raw + Math.PI) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)) -
+      Math.PI;
+    focusPhiTarget = targetPhi;
+    focusActive = true;
+    focusStart = null;
+  };
+
+  const focusOnMarker = (marker: Marker) => {
+    const targetTheta = Math.atan2(
+      marker.mesh.position.x,
+      marker.mesh.position.z,
+    );
+    // Tilt the camera to the marker's latitude so it's seen face-on
+    const targetPhi = THREE.MathUtils.clamp(
+      Math.PI / 2 - THREE.MathUtils.degToRad(marker.location.lat),
+      MIN_POLAR,
+      MAX_POLAR,
+    );
+    startFocusTween(targetTheta, targetPhi);
+  };
+
+  const selectLocation = (marker: Marker) => {
+    selected = marker;
+    markers.forEach((m) => {
+      m.mesh.material.color.setHex(
+        m === marker ? MARKER_COLOR_SELECTED : MARKER_COLOR,
+      );
+      if (m !== marker) m.mesh.scale.setScalar(1);
+    });
+    chipEls.forEach((chip) => {
+      chip.setAttribute(
+        "aria-pressed",
+        chip.dataset.locationId === marker.location.id ? "true" : "false",
+      );
+    });
+
+    if (cardEl && cardCityEl && cardCountryEl && cardStoryEl) {
+      cardCityEl.textContent = marker.location.city;
+      cardCountryEl.textContent = `— ${marker.location.country}`;
+      cardStoryEl.textContent = marker.location.story;
+      cardEl.removeAttribute("inert");
+      cardEl.classList.remove("opacity-0", "translate-y-2");
+    }
+
+    if (controls) controls.autoRotate = false;
+    highlightArcs(marker.location.id);
+    focusOnMarker(marker);
+  };
+
+  const closeCard = () => {
+    if (!selected) return;
+    selected.mesh.material.color.setHex(MARKER_COLOR);
+    selected.mesh.scale.setScalar(1);
+    selected = null;
+    chipEls.forEach((chip) => chip.setAttribute("aria-pressed", "false"));
+    if (cardEl) {
+      cardEl.setAttribute("inert", "");
+      cardEl.classList.add("opacity-0", "translate-y-2");
+    }
+    resetArcs();
+    // Ease back to the resting tilt, keeping the current azimuth
+    if (camera) {
+      cameraSpherical.setFromVector3(camera.position);
+      startFocusTween(cameraSpherical.theta, DEFAULT_POLAR);
+    }
+    if (controls) controls.autoRotate = !reducedMotion.matches;
+  };
+
+  const animate = (time: number) => {
+    rafId = requestAnimationFrame(animate);
+    if (!renderer || !scene || !camera || !controls) return;
+
+    if (focusActive && !reducedMotion.matches) {
+      if (focusStart === null) focusStart = time;
+      const progress = Math.min((time - focusStart) / FOCUS_DURATION, 1);
+      const eased =
+        progress < 0.5
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      const theta = focusThetaFrom + focusThetaDelta * eased;
+      const phi = focusPhiFrom + (focusPhiTarget - focusPhiFrom) * eased;
+      camera.position.setFromSphericalCoords(CAMERA_DISTANCE, phi, theta);
+      camera.lookAt(0, 0, 0);
+      if (progress >= 1) {
+        focusActive = false;
+        focusStart = null;
+        applyPolarLock(focusPhiTarget);
+      }
+    } else {
+      controls.update();
+    }
+
+    for (const arc of arcs) {
+      if (!arc.animating) continue;
+      if (arc.drawStart === null) arc.drawStart = time;
+      const progress = Math.min((time - arc.drawStart) / ARC_DRAW_DURATION, 1);
+      arc.line.geometry.setDrawRange(
+        0,
+        Math.max(2, Math.round(progress * arc.pointCount)),
+      );
+      if (progress >= 1) {
+        arc.animating = false;
+        arc.drawStart = null;
+      }
+    }
+
+    if (!reducedMotion.matches) {
+      for (const marker of markers) {
+        const scale =
+          marker === selected
+            ? 1.35
+            : 1 + 0.15 * Math.sin(time * 0.0025 + marker.index * 1.4);
+        marker.mesh.scale.setScalar(scale);
+      }
+    }
+
+    renderer.render(scene, camera);
+  };
+
+  const setFrustum = (width: number, height: number) => {
+    if (!camera) return;
+    const aspect = width / height;
+    camera.left = (-VIEW_HEIGHT * aspect) / 2;
+    camera.right = (VIEW_HEIGHT * aspect) / 2;
+    camera.top = VIEW_HEIGHT / 2;
+    camera.bottom = -VIEW_HEIGHT / 2;
+    camera.updateProjectionMatrix();
+  };
+
+  const onResize = () => {
+    if (!containerEl || !camera || !renderer) return;
+    const width = containerEl.offsetWidth;
+    const height = containerEl.offsetHeight;
+    setFrustum(width, height);
+    renderer.setSize(width, height);
+  };
+
+  const dispose = () => {
+    cancelAnimationFrame(rafId);
+    scene?.traverse((object) => {
+      if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
+        object.geometry.dispose();
+        const materials = Array.isArray(object.material)
+          ? object.material
+          : [object.material];
+        materials.forEach((material) => material.dispose());
+      }
+      if (object instanceof THREE.InstancedMesh) object.dispose();
+    });
+    controls?.dispose();
+    renderer?.dispose();
+  };
+
+  const updateTooltip = (event: PointerEvent, marker: Marker | null) => {
+    if (!tooltipEl || !canvasEl) return;
+    if (!marker) {
+      tooltipEl.classList.add("hidden");
+      return;
+    }
+    const rect = canvasEl.getBoundingClientRect();
+    tooltipEl.textContent = marker.location.city;
+    tooltipEl.style.left = `${event.clientX - rect.left + 14}px`;
+    tooltipEl.style.top = `${event.clientY - rect.top - 10}px`;
+    tooltipEl.classList.remove("hidden");
+  };
+
+  const init = () => {
+    if (!containerEl || !canvasEl) return;
+
+    const sizes = {
+      width: containerEl.offsetWidth,
+      height: containerEl.offsetHeight,
+    };
+
+    scene = new THREE.Scene();
+
+    // Orthographic projection: no perspective foreshortening, so the map stays
+    // readable all the way to the globe's edge (the classic dot-globe look)
+    camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+    setFrustum(sizes.width, sizes.height);
+    camera.position.setFromSphericalCoords(CAMERA_DISTANCE, DEFAULT_POLAR, 0);
+    camera.lookAt(0, 0, 0);
+
+    renderer = new THREE.WebGLRenderer({
+      canvas: canvasEl,
+      alpha: true,
+      antialias: true,
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(sizes.width, sizes.height);
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.autoRotate = !reducedMotion.matches;
+    controls.autoRotateSpeed = 1.2;
+    controls.enableDamping = true;
+    controls.enablePan = false;
+    controls.enableZoom = false;
+    // Drag stays horizontal; the tilt is driven by location focus
+    applyPolarLock(DEFAULT_POLAR);
+
+    buildOccluder();
+    loadDotsTexture("/world_alpha_mini.jpg");
+    buildMarkers();
+    buildArcs();
+
+    // Pointer interaction: distinguish clicks from orbit drags
+    canvasEl.addEventListener("pointerdown", (event) => {
+      pointerDownX = event.clientX;
+      pointerDownY = event.clientY;
+    });
+    canvasEl.addEventListener("pointerup", (event) => {
+      const moved = Math.hypot(
+        event.clientX - pointerDownX,
+        event.clientY - pointerDownY,
+      );
+      if (moved > 6) return; // it was a drag, not a click
+      const marker = pickMarker(event);
+      if (!marker) closeCard();
+      else if (marker === selected) closeCard();
+      else selectLocation(marker);
+    });
+    canvasEl.addEventListener("pointermove", (event) => {
+      if (!canvasEl) return;
+      const marker = pickMarker(event);
+      canvasEl.style.cursor = marker ? "pointer" : "";
+      updateTooltip(event, marker);
+    });
+    canvasEl.addEventListener("pointerleave", () => {
+      tooltipEl?.classList.add("hidden");
+    });
+
+    window.addEventListener("resize", onResize);
+    window.addEventListener("pagehide", dispose, { once: true });
+    reducedMotion.addEventListener("change", () => {
+      if (controls) controls.autoRotate = !reducedMotion.matches && !selected;
+      markers.forEach((m) => {
+        if (m !== selected) m.mesh.scale.setScalar(1);
+      });
+    });
+
+    rafId = requestAnimationFrame(animate);
+  };
+
+  const start = () => {
+    containerEl = document.querySelector<HTMLElement>(".globe-container");
+    canvasEl = document.querySelector<HTMLCanvasElement>(".globe-canvas");
+    if (!containerEl || !canvasEl) {
+      console.error("Globe container or canvas element not found");
+      return;
+    }
+
+    cardEl = containerEl.querySelector<HTMLElement>(".globe-card");
+    cardCityEl = containerEl.querySelector<HTMLElement>(".globe-card-city");
+    cardCountryEl = containerEl.querySelector<HTMLElement>(
+      ".globe-card-country",
+    );
+    cardStoryEl = containerEl.querySelector<HTMLElement>(".globe-card-story");
+    tooltipEl = containerEl.querySelector<HTMLElement>(".globe-tooltip");
+
+    chipEls = Array.from(
+      document.querySelectorAll<HTMLButtonElement>(".globe-chip"),
+    );
+    chipEls.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const marker = markers.find(
+          (m) => m.location.id === chip.dataset.locationId,
+        );
+        if (!marker) return;
+        if (selected === marker) closeCard();
+        else selectLocation(marker);
+      });
+    });
+
+    const closeButton =
+      containerEl.querySelector<HTMLButtonElement>(".globe-card-close");
+    closeButton?.addEventListener("click", closeCard);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeCard();
+    });
+
+    // Lazy-init: only spin up WebGL once the globe is near the viewport
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer.disconnect();
+          init();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(containerEl);
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, { once: true });
+  } else {
+    start();
+  }
 </script>
 
-
-<div class="globe-container" style="width: 100%; height: 350px; position: relative;">
-  <canvas class="globe-canvas" style="width: 100%; height: 100%;"></canvas>
+<div class="globe-container relative h-[350px] w-full">
+  <canvas
+    class="globe-canvas h-full w-full cursor-grab active:cursor-grabbing"
+    role="img"
+    aria-label="Interactive 3D globe with markers on five places that shaped my journey. Use the city buttons below to read each story."
+  ></canvas>
+  <span
+    class="globe-tooltip pointer-events-none absolute z-10 hidden -translate-y-full rounded border border-neutral-700 border-opacity-50 bg-neutral-950/80 px-2 py-0.5 text-[10px] font-medium text-neutral-200 shadow backdrop-blur-sm"
+    aria-hidden="true"></span>
+  <article
+    class="globe-card pointer-events-auto absolute inset-x-2 bottom-2 z-10 translate-y-2 rounded-md border border-neutral-700 border-opacity-50 bg-neutral-950/75 p-4 opacity-0 shadow backdrop-blur-xl transition-all duration-500 motion-reduce:transition-none"
+    aria-live="polite"
+    inert
+  >
+    <div class="flex items-start justify-between gap-4">
+      <h3 class="text-sm font-semibold text-neutral-200">
+        <span class="globe-card-city"></span>
+        <span class="globe-card-country font-normal text-neutral-500"></span>
+      </h3>
+      <button
+        type="button"
+        class="globe-card-close -m-1 rounded p-1 leading-none text-neutral-400 transition-colors hover:text-neutral-100 motion-reduce:transition-none"
+        aria-label="Close location details"
+      >
+        ✕
+      </button>
+    </div>
+    <p class="globe-card-story mt-2 text-xs leading-relaxed text-neutral-400">
+    </p>
+  </article>
 </div>
+
+<ul
+  class="mt-3 flex flex-wrap justify-center gap-1.5 lg:justify-start"
+  aria-label="Places that shaped my journey"
+>
+  {
+    LOCATIONS.map((location) => (
+      <li>
+        <button
+          type="button"
+          class="globe-chip flex items-center gap-x-1.5 rounded-full border border-neutral-700 border-opacity-50 bg-neutral-400/10 px-3 py-1 text-xs font-medium leading-5 text-neutral-300 shadow backdrop-blur-sm transition-colors duration-300 hover:border-green-400/40 hover:text-neutral-50 aria-pressed:border-green-400/60 aria-pressed:text-neutral-50 motion-reduce:transition-none"
+          data-location-id={location.id}
+          aria-pressed="false"
+        >
+          <span
+            class="h-1.5 w-1.5 rounded-full bg-green-400/80"
+            aria-hidden="true"
+          />
+          {location.city}
+        </button>
+      </li>
+    ))
+  }
+</ul>

@@ -73,14 +73,24 @@ const SparklesCore = (props: ParticlesProps) => {
             },
 
             fpsLimit: 120,
+            // Slow everything down for users who prefer reduced motion
+            motion: {
+              disable: false,
+              reduce: {
+                factor: 10,
+                value: true,
+              },
+            },
             interactivity: {
+              // The canvas sits behind the page content (z-0), so listen on the window
+              detectsOn: "window",
               events: {
                 onClick: {
-                  enable: true,
+                  enable: false,
                   mode: "push",
                 },
                 onHover: {
-                  enable: false,
+                  enable: true,
                   mode: "repulse",
                 },
                 resize: true as any,
@@ -90,8 +100,11 @@ const SparklesCore = (props: ParticlesProps) => {
                   quantity: 4,
                 },
                 repulse: {
-                  distance: 200,
+                  distance: 100,
                   duration: 0.4,
+                  factor: 2,
+                  speed: 0.4,
+                  easing: "ease-out-quad",
                 },
               },
             },
@@ -207,8 +220,8 @@ const SparklesCore = (props: ParticlesProps) => {
                 random: false,
                 size: false,
                 speed: {
-                  min: 0.1,
-                  max: 1,
+                  min: 0.15,
+                  max: 1.5,
                 },
                 spin: {
                   acceleration: 0,

@@ -16,7 +16,7 @@ export const EXPERIENCE: ExperienceProp[] = [
       "Python",
       "CI/CD",
     ],
-    logo: "https://media.licdn.com/dms/image/v2/D4E0BAQFWFDXBA8K6HA/company-logo_200_200/company-logo_200_200/0/1723496441868/bookhub_by_muthu_gmbh_logo?e=1746057600&v=beta&t=swm9sAjTgKe8auMdwoaZQ_9h0v8QaVDXzBrKpU9JRPA",
+    logo: "/logos/bookhub.png",
   },
   {
     dates: "Oct 2024 — Present",
@@ -25,14 +25,8 @@ export const EXPERIENCE: ExperienceProp[] = [
     companyUrl: "https://lab.priver.app/",
     description:
       "Working on multiple projects, including HouseApp (Flutter-based real estate discovery platform), DigiMed (medical center portal with GraphQL backend), and a product distribution app integrating SupaBase.",
-    technologies: [
-      "Flutter",
-      "Go",
-      "GraphQL",
-      "SupaBase",
-      "PostgreSQL",
-    ],
-    logo: "https://lab.priver.app/logo/logo-priver.svg",
+    technologies: ["Flutter", "Go", "GraphQL", "SupaBase", "PostgreSQL"],
+    logo: "/logos/priver.png",
   },
   {
     dates: "Aug 2024 — Present",
@@ -41,13 +35,8 @@ export const EXPERIENCE: ExperienceProp[] = [
     companyUrl: "https://www.linkedin.com/company/bast-colombia/",
     description:
       "Leading the development of BIA (BAST Intelligent Assistant), a chatbot for IPS appointment automation, reducing call center workload by 60%. Managing a team of three, defining system architecture, and ensuring product-market fit.",
-    technologies: [
-      "AI Chatbots",
-      "Python",
-      "NLP",
-      "PostgreSQL",
-    ],
-    logo: "https://media.licdn.com/dms/image/v2/D4E0BAQEPwtVOKAoEEQ/company-logo_200_200/company-logo_200_200/0/1667231075551?e=1746057600&v=beta&t=7KVdrQKzbcZV43v6bxJoamHJElvnVuI14DRLPfzKetY",
+    technologies: ["AI Chatbots", "Python", "NLP", "PostgreSQL"],
+    logo: "/logos/bast_automation.svg",
   },
   {
     dates: "October 2023 — September 2024",
@@ -64,24 +53,19 @@ export const EXPERIENCE: ExperienceProp[] = [
       "GraphQL",
       "Python",
       "AWS",
-      "Azure"
+      "Azure",
     ],
-    logo: "https://media.licdn.com/dms/image/v2/D4E0BAQEcohTSGrDOcg/company-logo_200_200/company-logo_200_200/0/1697696720463/intellsis_tech_logo?e=1746057600&v=beta&t=ZBZkj2wyRqo11lvjQ3ntHzqwANcjZDleQ1m216OkaPE",
+    logo: "/logos/intellsis.png",
   },
   {
     dates: "Founder",
     title: "TasteBud",
     company: "Startup Project",
-    companyUrl: "https://www.linkedin.com/company/tastebud-co/",
+    companyUrl: "https://app.tastebud-co.com",
     description:
       "Developing an AI-driven restaurant recommendation platform that suggests dishes based on user taste history and menu analysis. Self-funded and in development.",
-    technologies: [
-      "AI",
-      "Python",
-      "React Native",
-      "PostgreSQL",
-    ],
-    logo: "https://media.licdn.com/dms/image/v2/D4E0BAQEBcrf_SXa-8A/company-logo_100_100/company-logo_100_100/0/1737074829391/tastebud_co_logo?e=1746057600&v=beta&t=2DuSOyEMAHnDXdK3zYxX0eZtUC-9Nky2Dq22sR3V1jY",
+    technologies: ["AI", "Python", "React Native", "PostgreSQL"],
+    logo: "/logos/tastebud.png",
   },
   {
     dates: "Project",
@@ -98,7 +82,7 @@ export const EXPERIENCE: ExperienceProp[] = [
       "Docker",
       "Netlify",
     ],
-    logo: "https://djgbank.netlify.app/assets/logo-d4e9de9a.svg",
+    logo: "/logos/djgbank.svg",
   },
   {
     dates: "Project",
@@ -108,12 +92,7 @@ export const EXPERIENCE: ExperienceProp[] = [
     githubUrl: "https://github.com/DJG-inc/DJG_AI_Frontend",
     description:
       "Developed a toolkit to help automate the process of gathering requirements with the help of AI. In this toolkit meeting record generation, that with a meeting recording the tool can generate a list of requirements and a summary of the meeting, SRS generation automation, and a elicitation technique recommendation system.",
-    technologies: [
-      "React JS",
-      "Python",
-      "Docker",
-      "OpenAI API",
-    ],
+    technologies: ["React JS", "Python", "Docker", "OpenAI API"],
     logo: "/logos/djg.svg",
   },
   {
@@ -124,13 +103,8 @@ export const EXPERIENCE: ExperienceProp[] = [
     githubUrl: "https://github.com/SrOscuroBlck/UniCalcWebGMD",
     description:
       "Developed a web application that allows students to calculate their GPA and CGPA. The application allows students to input their grades and credit hours for each course and calculates their GPA and CGPA. Also allows pdf uploads to automatize the grade input process.",
-    technologies: [
-      "React JS",
-      "Python",
-      "Docker",
-      "Firebase",
-    ],
-    logo: "https://unicalcgmd.netlify.app/static/media/logo-ct.8c063364af2911006f24835791beff8b.svg",
+    technologies: ["React JS", "Python", "Docker", "Firebase"],
+    logo: "/logos/unicalc.svg",
   },
   {
     dates: "Project",
@@ -141,6 +115,6 @@ export const EXPERIENCE: ExperienceProp[] = [
     description:
       "Developed an e-commerce website for a fictional computer store. The website allows users to view products, add them to a cart, and checkout. The website was built using React JS and styled with Material-UI.",
     technologies: ["ReactJs", "Firebase", "Material-UI"],
-    logo: "https://pcstoreecommerce.netlify.app/assets/PcStoreLogo-74c7c985.svg",
+    logo: "/logos/pcstore.svg",
   },
 ];

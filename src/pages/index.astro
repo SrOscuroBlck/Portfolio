@@ -18,11 +18,14 @@ import Globe from "../components/globe/index.astro";
         >
           <div
             class="flex lg:items-start gap-4 flex-col lg:flex-row items-center text-center lg:text-left"
+            data-reveal
           >
             <img
               src="/me.jpeg"
               alt="Gustavo Camargo"
-              class="w-24 h-24 rounded-full w-16 h-16"
+              class="w-24 h-24 rounded-full ring-1 ring-neutral-700/50"
+              width="96"
+              height="96"
             />
             <div>
               <a
@@ -38,28 +41,32 @@ import Globe from "../components/globe/index.astro";
               <a
                 data-ccursor
                 href="mailto:camargogustavoa@gmail.com"
-                class="inline-flex transition-all border-neutral-700 hover:border-opacity-0 border-opacity-50 shadow rounded-md border backdrop-blur-xl bg-neutral-400/10 px-3 py-2.5 items-center text-white font-semibold group p-2 text-sm gap-x-2 mt-4"
+                class="inline-flex transition-all motion-reduce:transition-none border-neutral-700 hover:border-opacity-0 border-opacity-50 shadow rounded-md border backdrop-blur-xl bg-neutral-400/10 hover:bg-neutral-400/20 hover:-translate-y-0.5 motion-reduce:transform-none px-3 py-2.5 items-center text-white font-semibold group p-2 text-sm gap-x-2 mt-4"
               >
                 <span>Contact me</span>
-                <sapn
-                  class="w-2 h-2 rounded-full bg-green-400 duration-1000 animate-pulse"
+                <span
+                  class="w-2 h-2 rounded-full bg-green-400 duration-1000 animate-pulse motion-reduce:animate-none"
                 >
-                </sapn>
+                </span>
               </a>
             </div>
           </div>
-          <Globe />
+          <div data-reveal style="--reveal-delay: 120ms">
+            <Globe />
+          </div>
 
           {
             SOCIALS.length && (
               <ul
                 class="mt-8 flex items-center justify-center lg:justify-normal gap-x-5"
                 aria-label="Social media"
+                data-reveal
+                style="--reveal-delay: 240ms"
               >
                 {SOCIALS.map((social) => (
                   <li class="text-xs p-2 rounded" data-ccursor>
                     <a
-                      class="block hover:text-slate-200"
+                      class="block hover:text-slate-200 transition-transform duration-250 ease-out-soft hover:-translate-y-1 motion-reduce:transition-none motion-reduce:transform-none"
                       href={social.url}
                       target="_blank"
                       rel="noreferrer noopener"
@@ -90,18 +97,30 @@ import Globe from "../components/globe/index.astro";
                 About
               </h2>
             </div>
-            <div>
+            <div data-reveal>
               <div class="mb-4 space-y-4">
                 <p>
-                  I’m a Software Engineer specializing in <strong>backend systems, cloud computing, and AI-driven automation</strong>. Currently working on <strong>AWS serverless development</strong> at <strong>BookHub</strong>, leading <strong>chatbot automation</strong> for healthcare at <strong>BAST Automation</strong>, and developing <strong>real estate and medical solutions</strong> at <strong>Priver Group</strong>. 
+                  I’m a Software Engineer specializing in <strong
+                    >backend systems, cloud computing, and AI-driven automation</strong
+                  >. Currently working on <strong
+                    >AWS serverless development</strong
+                  > at <strong>BookHub</strong>, leading <strong
+                    >chatbot automation</strong
+                  > for healthcare at <strong>BAST Automation</strong>, and
+                  developing <strong>real estate and medical solutions</strong> at
+                  <strong>Priver Group</strong>.
                 </p>
                 <p>
-                  Passionate about <strong>building scalable software</strong> and driving <strong>entrepreneurial innovation</strong>, I’m also the founder of <strong>TasteBud</strong>, an AI-powered restaurant recommendation platform. Always up for new challenges, I thrive on creating solutions that merge <strong>technology and real-world impact</strong>.
+                  Passionate about <strong>building scalable software</strong> and
+                  driving <strong>entrepreneurial innovation</strong>, I’m also
+                  the founder of <strong>TasteBud</strong>, an AI-powered
+                  restaurant recommendation platform. Always up for new
+                  challenges, I thrive on creating solutions that merge <strong
+                    >technology and real-world impact</strong
+                  >.
                 </p>
 
-                <p>
-                  Ready for what’s next—bring on the challenges!
-                </p>
+                <p>Ready for what’s next—bring on the challenges!</p>
               </div>
             </div>
           </section>
@@ -123,7 +142,7 @@ import Globe from "../components/globe/index.astro";
                 {EXPERIENCE.map((experience) => <Experience {...experience} />)}
               </ol>
 
-              <div class="mt-12">
+              <div class="mt-12" data-reveal>
                 <a
                   data-ccursor
                   class="inline-flex items-center leading-tight text-neutral-200 font-semibold group p-2 rounded px-3"
@@ -161,7 +180,10 @@ import Globe from "../components/globe/index.astro";
               </div>
             </div>
           </section>
-          <footer class="max-w-md pb-16 text-sm text-neutral-500 sm:pb-0">
+          <footer
+            class="max-w-md pb-16 text-sm text-neutral-500 sm:pb-0"
+            data-reveal
+          >
             <p>
               Built with
               <a
@@ -176,27 +198,47 @@ import Globe from "../components/globe/index.astro";
                 class="font-medium text-neutral-400 hover:text-blue-300 focus-visible:text-blue-300 hover:underline"
                 target="_blank"
                 rel="noreferrer">Three.js</a
-                >
-                and
-                <a
-                  href="https://tailwindcss.com/"
-                  class="font-medium text-neutral-400 hover:text-cyan-300 focus-visible:text-cyan-300 hover:underline"
-                  target="_blank"
-                  rel="noreferrer">Tailwind CSS</a
-                >
-                . Hosted on
-                <a
-                  href="https://netlify.com/"
-                  class="font-medium text-neutral-400 hover:text-purple-300 focus-visible:text-purple-300 hover:underline"
-                  target="_blank"
-                  rel="noreferrer">Netlify</a
-                >
-                .
+              >
+              and
+              <a
+                href="https://tailwindcss.com/"
+                class="font-medium text-neutral-400 hover:text-cyan-300 focus-visible:text-cyan-300 hover:underline"
+                target="_blank"
+                rel="noreferrer">Tailwind CSS</a
+              >
+              . Hosted on
+              <a
+                href="https://netlify.com/"
+                class="font-medium text-neutral-400 hover:text-purple-300 focus-visible:text-purple-300 hover:underline"
+                target="_blank"
+                rel="noreferrer">Netlify</a
+              >
+              .
             </p>
           </footer>
         </main>
       </div>
     </div>
+  </div>
+
+  <div
+    class="scroll-hint fixed bottom-5 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-1 opacity-100 transition-opacity duration-400 motion-reduce:transition-none"
+    aria-hidden="true"
+  >
+    <span class="text-[10px] uppercase tracking-widest text-neutral-500">
+      Scroll
+    </span>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      class="h-4 w-4 animate-bounce text-neutral-500 motion-reduce:animate-none"
+    >
+      <path
+        fill-rule="evenodd"
+        d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z"
+        clip-rule="evenodd"></path>
+    </svg>
   </div>
 
   <footer class="text-center py-4 text-xs">

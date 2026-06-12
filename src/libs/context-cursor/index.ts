@@ -18,7 +18,7 @@ const contextCursor = (props: CProps = {}) => {
   // Load mode when page is loaded
   window.onload = () => {
     let interactElements = document.querySelectorAll(
-      `[${propNames.dataAttr}]`
+      `[${propNames.dataAttr}]`,
     ) as NodeListOf<Element>;
     contextMode(cCursor, props, interactElements);
   };
