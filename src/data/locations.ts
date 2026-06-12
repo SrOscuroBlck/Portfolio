@@ -8,6 +8,10 @@ export interface MapLocation {
   /** Longitude in degrees, east positive. */
   lon: number;
   story: string;
+  /** Anchor of the related experience entry (see experience.ts), if any. */
+  relatedAnchor?: string;
+  /** Label for the deep-link to the related experience entry. */
+  relatedLabel?: string;
 }
 
 export const LOCATIONS: MapLocation[] = [
@@ -19,6 +23,8 @@ export const LOCATIONS: MapLocation[] = [
     lon: -76.532,
     story:
       "Home base — the city where I live and study, and where my life is unfolding today.",
+    relatedAnchor: "bast",
+    relatedLabel: "BAST Automation",
   },
   {
     id: "miami",
@@ -28,6 +34,8 @@ export const LOCATIONS: MapLocation[] = [
     lon: -80.1918,
     story:
       "I've worked with multiple US companies, among them Priver Group, who trusted my skills from the very start of my career. I'm grateful for everything I learned there — Golang, GraphQL, and plenty of other technologies.",
+    relatedAnchor: "priver",
+    relatedLabel: "Priver Group",
   },
   {
     id: "quebec",
@@ -37,6 +45,8 @@ export const LOCATIONS: MapLocation[] = [
     lon: -71.208,
     story:
       "My very first job was in Canada with Intellsis. They believed in me, always gave me the best tools to build their software, and trusted me with a huge project I really enjoyed — the one that made me understand I was made for this.",
+    relatedAnchor: "intellsis",
+    relatedLabel: "Intellsis",
   },
   {
     id: "sault-ste-marie",
@@ -55,5 +65,7 @@ export const LOCATIONS: MapLocation[] = [
     lon: 8.6821,
     story:
       "My current company is here. I appreciate all the experience with event-driven architecture and the good work we've done — they grow my developer experience every day, giving me room to learn new things and adapt to new technologies.",
+    relatedAnchor: "bookhub",
+    relatedLabel: "BookHub",
   },
 ];

@@ -54,6 +54,7 @@ import { LOCATIONS } from "../../data/locations";
   let cardCityEl: HTMLElement | null = null;
   let cardCountryEl: HTMLElement | null = null;
   let cardStoryEl: HTMLElement | null = null;
+  let cardLinkEl: HTMLAnchorElement | null = null;
   let tooltipEl: HTMLElement | null = null;
   let chipEls: HTMLButtonElement[] = [];
 
@@ -331,7 +332,7 @@ import { LOCATIONS } from "../../data/locations";
       m.mesh.material.color.setHex(
         m === marker ? MARKER_COLOR_SELECTED : MARKER_COLOR,
       );
-      if (m !== marker) m.mesh.scale.setScalar(1);
+      m.mesh.scale.setScalar(m === marker ? 1.35 : 1);
     });
     chipEls.forEach((chip) => {
       chip.setAttribute(
@@ -344,6 +345,16 @@ import { LOCATIONS } from "../../data/locations";
       cardCityEl.textContent = marker.location.city;
       cardCountryEl.textContent = `— ${marker.location.country}`;
       cardStoryEl.textContent = marker.location.story;
+      if (cardLinkEl) {
+        const { relatedAnchor, relatedLabel } = marker.location;
+        if (relatedAnchor) {
+          cardLinkEl.href = `#${relatedAnchor}`;
+          cardLinkEl.textContent = `See the work — ${relatedLabel ?? "related entry"} ↓`;
+        }
+        // The "hidden" class wins over the link's display utility; the
+        // hidden attribute would lose that cascade fight
+        cardLinkEl.classList.toggle("hidden", !relatedAnchor);
+      }
       cardEl.removeAttribute("inert");
       cardEl.classList.remove("opacity-0", "translate-y-2");
     }
@@ -407,16 +418,6 @@ import { LOCATIONS } from "../../data/locations";
       if (progress >= 1) {
         arc.animating = false;
         arc.drawStart = null;
-      }
-    }
-
-    if (!reducedMotion.matches) {
-      for (const marker of markers) {
-        const scale =
-          marker === selected
-            ? 1.35
-            : 1 + 0.15 * Math.sin(time * 0.0025 + marker.index * 1.4);
-        marker.mesh.scale.setScalar(scale);
       }
     }
 
@@ -539,9 +540,6 @@ import { LOCATIONS } from "../../data/locations";
     window.addEventListener("pagehide", dispose, { once: true });
     reducedMotion.addEventListener("change", () => {
       if (controls) controls.autoRotate = !reducedMotion.matches && !selected;
-      markers.forEach((m) => {
-        if (m !== selected) m.mesh.scale.setScalar(1);
-      });
     });
 
     rafId = requestAnimationFrame(animate);
@@ -561,7 +559,21 @@ import { LOCATIONS } from "../../data/locations";
       ".globe-card-country",
     );
     cardStoryEl = containerEl.querySelector<HTMLElement>(".globe-card-story");
+    cardLinkEl =
+      containerEl.querySelector<HTMLAnchorElement>(".globe-card-link");
     tooltipEl = containerEl.querySelector<HTMLElement>(".globe-tooltip");
+
+    // Deep-link into the related experience entry with a brief highlight
+    cardLinkEl?.addEventListener("click", () => {
+      const href = cardLinkEl?.getAttribute("href") ?? "";
+      if (!href.startsWith("#")) return;
+      const target = document.querySelector<HTMLElement>(href);
+      if (!target) return;
+      target.classList.remove("flash-highlight");
+      void target.offsetWidth; // restart the animation if re-triggered
+      target.classList.add("flash-highlight");
+      window.setTimeout(() => target.classList.remove("flash-highlight"), 1700);
+    });
 
     chipEls = Array.from(
       document.querySelectorAll<HTMLButtonElement>(".globe-chip"),
@@ -604,14 +616,21 @@ import { LOCATIONS } from "../../data/locations";
   }
 </script>
 
-<div class="globe-container relative h-[350px] w-full">
+<div
+  class="globe-container relative h-[340px] w-full lg:h-[clamp(280px,36vh,380px)]"
+>
+  <div
+    class="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-neutral-100/[0.05] blur-3xl"
+    aria-hidden="true"
+  >
+  </div>
   <canvas
     class="globe-canvas h-full w-full cursor-grab active:cursor-grabbing"
     role="img"
     aria-label="Interactive 3D globe with markers on five places that shaped my journey. Use the city buttons below to read each story."
   ></canvas>
   <span
-    class="globe-tooltip pointer-events-none absolute z-10 hidden -translate-y-full rounded border border-neutral-700 border-opacity-50 bg-neutral-950/80 px-2 py-0.5 text-[10px] font-medium text-neutral-200 shadow backdrop-blur-sm"
+    class="globe-tooltip pointer-events-none absolute z-10 hidden -translate-y-full rounded border border-neutral-700 border-opacity-50 bg-neutral-950/80 px-2 py-0.5 font-mono text-[10px] text-neutral-200 shadow backdrop-blur-sm"
     aria-hidden="true"></span>
   <article
     class="globe-card pointer-events-auto absolute inset-x-2 bottom-2 z-10 translate-y-2 rounded-md border border-neutral-700 border-opacity-50 bg-neutral-950/75 p-4 opacity-0 shadow backdrop-blur-xl transition-all duration-500 motion-reduce:transition-none"
@@ -619,25 +638,43 @@ import { LOCATIONS } from "../../data/locations";
     inert
   >
     <div class="flex items-start justify-between gap-4">
-      <h3 class="text-sm font-semibold text-neutral-200">
+      <h3
+        class="font-display text-lg font-normal leading-none text-neutral-100"
+      >
         <span class="globe-card-city"></span>
-        <span class="globe-card-country font-normal text-neutral-500"></span>
+        <span class="globe-card-country font-mono text-label text-neutral-500"
+        ></span>
       </h3>
       <button
         type="button"
-        class="globe-card-close -m-1 rounded p-1 leading-none text-neutral-400 transition-colors hover:text-neutral-100 motion-reduce:transition-none"
+        class="globe-card-close -m-1 rounded p-1 text-neutral-400 transition-colors hover:text-neutral-100 motion-reduce:transition-none"
         aria-label="Close location details"
       >
-        ✕
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          class="h-3.5 w-3.5"
+          aria-hidden="true"
+        >
+          <path
+            d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"
+          ></path>
+        </svg>
       </button>
     </div>
     <p class="globe-card-story mt-2 text-xs leading-relaxed text-neutral-400">
     </p>
+    <a
+      href="#"
+      class="globe-card-link mt-3 hidden items-center gap-1 font-mono text-label text-green-300 transition-colors duration-250 hover:text-green-200 motion-reduce:transition-none [&:not(.hidden)]:inline-flex"
+      >See the work</a
+    >
   </article>
 </div>
 
 <ul
-  class="mt-3 flex flex-wrap justify-center gap-1.5 lg:justify-start"
+  class="mt-4 flex flex-wrap justify-center gap-1.5 lg:justify-start"
   aria-label="Places that shaped my journey"
 >
   {
@@ -645,12 +682,12 @@ import { LOCATIONS } from "../../data/locations";
       <li>
         <button
           type="button"
-          class="globe-chip flex items-center gap-x-1.5 rounded-full border border-neutral-700 border-opacity-50 bg-neutral-400/10 px-3 py-1 text-xs font-medium leading-5 text-neutral-300 shadow backdrop-blur-sm transition-colors duration-300 hover:border-green-400/40 hover:text-neutral-50 aria-pressed:border-green-400/60 aria-pressed:text-neutral-50 motion-reduce:transition-none"
+          class="globe-chip flex items-center gap-x-1.5 rounded-full border border-neutral-700 border-opacity-50 bg-neutral-400/10 px-3 py-[3px] font-mono text-[10px] leading-4 text-neutral-300 shadow backdrop-blur-sm transition-colors duration-300 hover:border-green-400/40 hover:text-neutral-50 aria-pressed:border-green-400/60 aria-pressed:text-neutral-50 motion-reduce:transition-none"
           data-location-id={location.id}
           aria-pressed="false"
         >
           <span
-            class="h-1.5 w-1.5 rounded-full bg-green-400/80"
+            class="h-1 w-1 rounded-full bg-green-400/80"
             aria-hidden="true"
           />
           {location.city}

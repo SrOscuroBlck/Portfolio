@@ -1,4 +1,6 @@
 export interface Props {
+  /** In-page anchor id, used by globe location cards to deep-link here. */
+  anchor?: string;
   dates: string;
   title: string;
   company: string;

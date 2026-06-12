@@ -1,4 +1,8 @@
 ---
+import "@fontsource-variable/instrument-sans";
+import "@fontsource/instrument-serif";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
 import SparklesCore from "../components/SparklesCore.tsx";
 
 interface Props {
@@ -6,16 +10,24 @@ interface Props {
 }
 
 const { title } = Astro.props;
+const description =
+  "Gustavo Camargo — backend software engineer building serverless, event-driven systems on AWS. Based in Cali, Colombia, working with teams across the Americas and Europe.";
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content="Gustavo Camargo's portfolio" />
+    <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg" href="/logo.svg" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#000000" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="/me.jpeg" />
+    <meta name="twitter:card" content="summary" />
     <title>{title}</title>
     <script is:inline>
       // Marks JS availability so [data-reveal] elements are only hidden when the reveal script can run
@@ -24,7 +36,7 @@ const { title } = Astro.props;
   </head>
 
   <body
-    class="bg-black leading-relaxed text-neutral-200 tracking-wide antialiased selection:bg-neutral-300 selection:text-neutral-900 z-10 relative"
+    class="bg-black font-sans leading-relaxed text-neutral-200 tracking-wide antialiased selection:bg-neutral-300 selection:text-neutral-900 z-10 relative"
   >
     <SparklesCore
       client:idle
@@ -43,9 +55,73 @@ const { title } = Astro.props;
 
   <style is:global>
     html {
-      font-family: system-ui, sans-serif;
       background-size: 224px;
       font-size: 1.125rem;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      html {
+        scroll-behavior: smooth;
+      }
+    }
+
+    /* Terminal-style caret blink (distinct from the slower available-dot pulse) */
+    @keyframes caret-blink {
+      0%,
+      49% {
+        opacity: 1;
+      }
+      50%,
+      100% {
+        opacity: 0;
+      }
+    }
+
+    .caret-blink {
+      animation: caret-blink 1.2s steps(1) infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .caret-blink {
+        animation: none;
+      }
+    }
+
+    /* Active section in the header nav (toggled by the scrollspy in main.ts) */
+    .nav-link.is-active {
+      color: rgb(245 245 245);
+    }
+
+    .nav-link.is-active .nav-indicator {
+      background-color: rgb(74 222 128 / 0.8);
+      transform: scale(1.6);
+    }
+
+    /* Brief ring flash when a globe card deep-links to an experience entry */
+    .flash-highlight {
+      animation: flash-highlight 1.6s ease-out;
+      border-radius: 0.375rem;
+    }
+
+    @keyframes flash-highlight {
+      0%,
+      45% {
+        box-shadow:
+          0 0 0 1px rgba(74, 222, 128, 0.45),
+          inset 0 0 24px rgba(74, 222, 128, 0.06);
+      }
+      100% {
+        box-shadow:
+          0 0 0 1px rgba(74, 222, 128, 0),
+          inset 0 0 24px rgba(74, 222, 128, 0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .flash-highlight {
+        animation: none;
+        box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.45);
+      }
     }
 
     .js [data-reveal] {
