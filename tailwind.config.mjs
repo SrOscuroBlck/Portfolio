@@ -6,11 +6,6 @@ export default {
       fontSize: {
         label: ["0.6875rem", { lineHeight: "1rem" }],
       },
-      fontFamily: {
-        sans: ["Instrument Sans Variable", "system-ui", "sans-serif"],
-        display: ["Instrument Serif", "Georgia", "serif"],
-        mono: ["IBM Plex Mono", "ui-monospace", "SFMono-Regular", "monospace"],
-      },
       transitionTimingFunction: {
         "out-soft": "cubic-bezier(0.16, 1, 0.3, 1)",
       },
