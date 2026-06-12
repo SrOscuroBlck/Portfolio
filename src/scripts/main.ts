@@ -37,7 +37,16 @@ const initScrollReveal = () => {
     // edge that the rise is actually seen, never so late content feels missing
     { threshold: 0, rootMargin: "0px 0px -15% 0px" },
   );
-  elements.forEach((element) => observer.observe(element));
+  elements.forEach((element) => {
+    // Sticky-header elements never move relative to the viewport on desktop,
+    // so a scroll-gated reveal would leave them invisible forever — reveal
+    // them on load (their inline --reveal-delay still staggers the entrance)
+    if (element.closest("header")) {
+      element.classList.add("is-visible");
+    } else {
+      observer.observe(element);
+    }
+  });
 };
 
 const initScrollHint = () => {
