@@ -1,8 +1,12 @@
 import contextCursor from "../libs/context-cursor/index";
 
-contextCursor({
-  radius: 25, //will change the radius/size of the cursor
-});
+// Only mount the custom cursor for devices with a real pointer —
+// on touch screens the bubble just floats uselessly where the last tap was
+if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+  contextCursor({
+    radius: 25, //will change the radius/size of the cursor
+  });
+}
 
 const initScrollReveal = () => {
   const elements = document.querySelectorAll<HTMLElement>("[data-reveal]");
@@ -15,16 +19,23 @@ const initScrollReveal = () => {
 
   const observer = new IntersectionObserver(
     (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
+      const visible = entries.filter((entry) => entry.isIntersecting);
+      visible.forEach((entry, index) => {
+        const element = entry.target as HTMLElement;
+        // Stagger elements that enter together (hero keeps its own delays)
+        if (!element.style.getPropertyValue("--reveal-delay")) {
+          element.style.setProperty(
+            "--reveal-delay",
+            `${Math.min(index, 3) * 90}ms`,
+          );
         }
+        element.classList.add("is-visible");
+        observer.unobserve(element);
       });
     },
-    // Reveal as soon as an element's edge enters the viewport — content must
-    // never feel missing to someone who only scrolls a little
-    { threshold: 0, rootMargin: "0px 0px -40px 0px" },
+    // Reveal as the element visibly enters — far enough up from the bottom
+    // edge that the rise is actually seen, never so late content feels missing
+    { threshold: 0, rootMargin: "0px 0px -15% 0px" },
   );
   elements.forEach((element) => observer.observe(element));
 };
@@ -112,11 +123,30 @@ const initTechFilter = () => {
   });
 };
 
+const initTypewriter = () => {
+  const el = document.querySelector<HTMLElement>(".typewriter-text");
+  if (!el) return;
+  const fullText = el.textContent ?? "";
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  el.textContent = "";
+  let length = 0;
+  const type = () => {
+    length++;
+    el.textContent = fullText.slice(0, length);
+    if (length < fullText.length) {
+      window.setTimeout(type, 40 + Math.random() * 45);
+    }
+  };
+  window.setTimeout(type, 400);
+};
+
 const initOnReady = () => {
   initScrollReveal();
   initScrollHint();
   initScrollSpy();
   initTechFilter();
+  initTypewriter();
 };
 
 if (document.readyState === "loading") {

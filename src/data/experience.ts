@@ -21,7 +21,7 @@ export const EXPERIENCE: ExperienceProp[] = [
   },
   {
     anchor: "priver",
-    dates: "Oct 2024 — Present",
+    dates: "Oct 2024 — Apr 2026",
     title: "Software Engineer (Freelance)",
     company: "Priver Group (Remote)",
     companyUrl: "https://lab.priver.app/",
@@ -32,7 +32,7 @@ export const EXPERIENCE: ExperienceProp[] = [
   },
   {
     anchor: "bast",
-    dates: "Aug 2024 — Present",
+    dates: "Aug 2024 — Jan 2026",
     title: "Tech Lead",
     company: "BAST Automation (Remote)",
     companyUrl: "https://www.linkedin.com/company/bast-colombia/",
@@ -43,7 +43,7 @@ export const EXPERIENCE: ExperienceProp[] = [
   },
   {
     anchor: "intellsis",
-    dates: "October 2023 — September 2024",
+    dates: "Oct 2023 — Sep 2024",
     title: "Junior Software Engineer",
     company: "Intellsis (Remote)",
     companyUrl: "https://www.linkedin.com/company/intellsis-tech/",

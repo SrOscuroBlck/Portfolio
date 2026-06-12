@@ -1,0 +1,245 @@
+<!-- Ambient sky layer: occasional shooting stars (white) and rarer, slower
+comets (green) streaking across the particle background. Deliberately sparse —
+one streak at a time, several seconds apart — to add life without overwhelming. -->
+<div
+  class="starfield pointer-events-none fixed inset-0 z-0 overflow-hidden"
+  aria-hidden="true"
+>
+</div>
+
+<script>
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let timer = 0;
+
+  const ROCKET_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"><path d="M12 2c3 2.5 4.5 6 4.5 9.5l2.5 3.5-3.5.5c-.5 1.5-1.5 3-3.5 5-2-2-3-3.5-3.5-5l-3.5-.5 2.5-3.5C7.5 8 9 4.5 12 2Z"/><circle cx="12" cy="9.5" r="1.6"/></svg>`;
+
+  // Everyday-stack logos flying as starships (icon-style logos only, tinted
+  // to the site's neutral monochrome — files in public/logos/tech/)
+  const TECH_SHIPS = [
+    "python",
+    "react",
+    "graphql",
+    "postgresql",
+    "docker",
+    "flutter",
+  ];
+
+  const spawnStreak = (container: HTMLElement) => {
+    const roll = Math.random();
+    const streak = document.createElement("span");
+    if (roll < 0.28) {
+      // A starship cruising across the sky — usually one of the tech-stack
+      // logos, sometimes the classic rocket. Each flight follows its own
+      // randomly bent curve so no two paths look alike.
+      const isRocket = Math.random() < 0.3;
+      streak.style.top = `${55 + Math.random() * 35}%`;
+      streak.style.left = `${10 + Math.random() * 70}%`;
+
+      const endXVw = -28 + Math.random() * 56; // drift left or right…
+      const endYVh = -(25 + Math.random() * 25); // …but always upward
+      const endX = (endXVw / 100) * window.innerWidth;
+      const endY = (endYVh / 100) * window.innerHeight;
+
+      if (CSS.supports("offset-path", "path('M 0 0 L 10 10')")) {
+        // Random cubic bezier: lateral bends make the flight sway smoothly
+        const c1x = endX * 0.3 + (Math.random() - 0.5) * 260;
+        const c1y = endY * 0.35 + (Math.random() - 0.5) * 70;
+        const c2x = endX * 0.7 + (Math.random() - 0.5) * 260;
+        const c2y = endY * 0.7 + (Math.random() - 0.5) * 70;
+        streak.style.setProperty(
+          "offset-path",
+          `path('M 0 0 C ${c1x.toFixed(0)} ${c1y.toFixed(0)}, ${c2x.toFixed(0)} ${c2y.toFixed(0)}, ${endX.toFixed(0)} ${endY.toFixed(0)}')`,
+        );
+      } else {
+        // Fallback: straight flight via the translate keyframe values
+        streak.style.setProperty("--rocket-dx", `${endXVw.toFixed(1)}vw`);
+        streak.style.setProperty("--rocket-dy", `${endYVh.toFixed(1)}vh`);
+      }
+      streak.style.animationDuration = `${(8 + Math.random() * 6).toFixed(1)}s`;
+
+      if (isRocket) {
+        streak.className = "starfield-rocket";
+        streak.innerHTML = ROCKET_SVG;
+      } else {
+        streak.className = "starfield-rocket is-tech-ship";
+        const tech = TECH_SHIPS[Math.floor(Math.random() * TECH_SHIPS.length)];
+        const logo = document.createElement("img");
+        logo.src = `/logos/tech/${tech}.svg`;
+        logo.alt = "";
+        logo.width = 20;
+        logo.height = 20;
+        streak.appendChild(logo);
+      }
+    } else {
+      const isComet = roll < 0.45;
+      streak.className = isComet ? "shooting-star is-comet" : "shooting-star";
+      streak.style.top = `${5 + Math.random() * 60}%`;
+      streak.style.left = `${10 + Math.random() * 80}%`;
+
+      // Each streak gets its own direction, length, and pace
+      const angle = Math.random() * 360;
+      streak.style.setProperty("--streak-angle", `${angle.toFixed(1)}deg`);
+      streak.style.setProperty(
+        "--streak-travel",
+        `${(-(220 + Math.random() * 160)).toFixed(0)}px`,
+      );
+      streak.style.animationDuration = isComet
+        ? `${(2 + Math.random() * 1.3).toFixed(2)}s`
+        : `${(0.9 + Math.random() * 0.8).toFixed(2)}s`;
+    }
+    container.appendChild(streak);
+    streak.addEventListener("animationend", () => streak.remove(), {
+      once: true,
+    });
+  };
+
+  const schedule = (container: HTMLElement) => {
+    timer = window.setTimeout(
+      () => {
+        if (!reducedMotion.matches && !document.hidden) {
+          spawnStreak(container);
+        }
+        schedule(container);
+      },
+      2800 + Math.random() * 4200,
+    );
+  };
+
+  const start = () => {
+    const container = document.querySelector<HTMLElement>(".starfield");
+    if (!container) return;
+    schedule(container);
+    window.addEventListener("pagehide", () => window.clearTimeout(timer), {
+      once: true,
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, { once: true });
+  } else {
+    start();
+  }
+</script>
+
+<style is:global>
+  .shooting-star {
+    position: absolute;
+    width: 130px;
+    height: 1px;
+    background: linear-gradient(
+      to left,
+      rgb(245 245 245 / 0.9),
+      rgb(245 245 245 / 0)
+    );
+    border-radius: 9999px;
+    opacity: 0;
+    animation: shooting-star 1.2s ease-out forwards;
+  }
+
+  .shooting-star.is-comet {
+    width: 180px;
+    height: 2px;
+    background: linear-gradient(
+      to left,
+      rgb(134 239 172 / 0.8),
+      rgb(134 239 172 / 0)
+    );
+    animation-duration: 2.4s;
+  }
+
+  @keyframes shooting-star {
+    0% {
+      opacity: 0;
+      transform: rotate(var(--streak-angle, -30deg)) translateX(0);
+    }
+    12% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(var(--streak-angle, -30deg))
+        translateX(var(--streak-travel, -280px));
+    }
+  }
+
+  .starfield-rocket {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    color: rgb(212 212 212 / 0.75);
+    opacity: 0;
+    /* Nose follows the flight path's tangent (the SVG points straight up) */
+    offset-rotate: auto 90deg;
+    animation: rocket-fly 9s ease-in-out forwards;
+  }
+
+  .starfield-rocket svg,
+  .starfield-rocket img {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Tech-logo ships bank along their curve like the rocket does — the
+     offset-rotate inherited from .starfield-rocket keeps the nose on the
+     flight tangent, so the flame always trails opposite the motion */
+  .starfield-rocket.is-tech-ship {
+    filter: opacity(0.7);
+  }
+
+  /* …and they burn a much longer plume than the classic rocket */
+  .starfield-rocket.is-tech-ship::after {
+    height: 52px;
+    width: 9px;
+    background: radial-gradient(
+      ellipse 60% 32% at 50% 7%,
+      rgb(134 239 172 / 0.95),
+      rgb(134 239 172 / 0.35) 50%,
+      transparent 88%
+    );
+  }
+
+  /* Exhaust flame: a small static teardrop glow, bright at the nozzle */
+  .starfield-rocket::after {
+    content: "";
+    position: absolute;
+    top: 90%;
+    left: 50%;
+    width: 7px;
+    height: 13px;
+    transform: translateX(-50%);
+    background: radial-gradient(
+      ellipse 60% 55% at 50% 20%,
+      rgb(134 239 172 / 0.9),
+      rgb(134 239 172 / 0.4) 50%,
+      transparent 80%
+    );
+    border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+    filter: blur(0.6px);
+  }
+
+  @keyframes rocket-fly {
+    0% {
+      opacity: 0;
+      offset-distance: 0%;
+      translate: 0 0;
+    }
+    8% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      offset-distance: 100%;
+      translate: var(--rocket-dx, 0) var(--rocket-dy, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .shooting-star,
+    .starfield-rocket {
+      display: none;
+    }
+  }
+</style>

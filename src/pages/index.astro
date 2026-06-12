@@ -31,7 +31,7 @@ const NAV_LINKS = [
               <img
                 src="/me.jpeg"
                 alt="Gustavo Camargo"
-                class="w-24 h-24 rounded-full object-cover ring-1 ring-neutral-700/50"
+                class="w-24 h-24 shrink-0 rounded-full object-cover ring-1 ring-neutral-700/50"
                 width="96"
                 height="96"
               />
@@ -44,20 +44,16 @@ const NAV_LINKS = [
                 </a>
                 <h2
                   class="mt-3 font-mono text-xs lg:text-sm uppercase tracking-widest text-neutral-400"
+                  aria-label="Software Engineer · Backend"
                 >
-                  Software Engineer · Backend
+                  <span class="typewriter-text" aria-hidden="true"
+                    >Software Engineer · Backend</span
+                  ><span
+                    class="caret-blink ml-1 inline-block h-3 w-[7px] translate-y-0.5 bg-green-400/70"
+                    aria-hidden="true"></span>
                 </h2>
               </div>
             </div>
-
-            <p
-              class="mt-5 font-mono text-label leading-relaxed text-neutral-600"
-            >
-              <span class="text-green-400/80" aria-hidden="true">➜</span>
-              serverless · event-driven · cloud systems<span
-                class="caret-blink ml-1 inline-block h-3 w-[7px] translate-y-0.5 bg-green-400/70"
-                aria-hidden="true"></span>
-            </p>
           </div>
 
           <div data-reveal style="--reveal-delay: 120ms">
@@ -101,19 +97,15 @@ const NAV_LINKS = [
           >
           </div>
           <nav>
-            <ul class="flex w-56 flex-col gap-7 py-8">
+            <ul class="flex flex-col items-center gap-7 py-8">
               {
                 NAV_LINKS.map(({ id, label }) => (
-                  <li>
+                  <li class="flex justify-center">
                     <a
                       href={`#${id}`}
-                      class="nav-link group grid grid-cols-[1fr_auto_1fr] items-center font-mono text-label uppercase tracking-widest text-neutral-500 transition-colors duration-250 hover:text-neutral-200 motion-reduce:transition-none"
+                      class="nav-link block text-center font-mono text-label uppercase tracking-widest text-neutral-500 transition-colors duration-250 hover:text-neutral-200 motion-reduce:transition-none"
                     >
-                      <span
-                        class="nav-indicator col-start-2 h-1.5 w-1.5 rounded-full bg-neutral-600 transition-all duration-300 group-hover:bg-neutral-300 motion-reduce:transition-none"
-                        aria-hidden="true"
-                      />
-                      <span class="justify-self-start pl-2.5">{label}</span>
+                      {label}
                     </a>
                   </li>
                 ))
